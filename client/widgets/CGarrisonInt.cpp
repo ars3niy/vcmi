@@ -468,6 +468,13 @@ void CGarrisonInt::createSlots()
 	}
 }
 
+CGarrisonSlot *CGarrisonInt::getSlot(unsigned row, unsigned slotNumber)
+{
+	if (slotNumber >= 7)
+		slotNumber = 7;
+	return availableSlots[(row ? 7 : 0) + slotNumber].get();
+}
+
 void CGarrisonInt::recreateSlots()
 {
 	selectSlot(nullptr);
@@ -490,6 +497,134 @@ void CGarrisonInt::splitClick()
 void CGarrisonInt::splitStacks(int, int amountRight)
 {
 	LOCPLINT->cb->splitStack(armedObjs[getSelection()->upg], armedObjs[pb], getSelection()->ID, p2, amountRight);
+}
+
+void CGarrisonInt::moveAllCreatures(unsigned fromRow, unsigned toRow)
+{
+	// Sort trops to move by decreasing creature level - thus move higher-level creatures first.
+	// This is not necessarily the best logic, maybe creature counts should be taken into account.
+	std::array<CGarrisonSlot *, 7> slotsByStrength;
+	for (unsigned i = 0; i < slotsByStrength.size(); i++)
+		slotsByStrength[i] = getSlot(fromRow, i);
+	std::sort(slotsByStrength.begin(), slotsByStrength.end(),
+			  [](CGarrisonSlot *slot1, CGarrisonSlot *slot2)
+			  {
+				  return (!slot2->myStack || (slot1->myStack && (slot1->creature->level > slot2->creature->level)));
+			  });
+
+	// Create a copy of (a subset of) slots state - thus it will work regardless of whether creature
+	// transfer callbacks modify the actual data structures synchronously or not.
+	std::array<const CCreature *, 7> targetSlotCreatures;
+	std::array<TQuantity, 7> targetSlotCreatureCount;
+	unsigned sourceRowCreatureSlots = 0;
+	for (unsigned i = 0; i < 7; i++)
+	{
+		CGarrisonSlot *slot = getSlot(toRow, i);
+		if (slot->myStack)
+		{
+			targetSlotCreatures[i] = slot->creature;
+			targetSlotCreatureCount[i] = slot->myStack->count;
+		}
+		else
+		{
+			targetSlotCreatures[i] = nullptr;
+			targetSlotCreatureCount[i] = 0;
+		}
+		if (getSlot(fromRow, i)->myStack)
+			sourceRowCreatureSlots++;
+	}
+
+	// Now move all creatures in order of decreasing creature level, moving it to a slot with highest
+	// number of same creature type if any, or else into at empty slot if there is one.
+	for (CGarrisonSlot *slotFrom: slotsByStrength)
+	{
+		if (!slotFrom->myStack) continue;
+
+		CGarrisonSlot *slotTo = nullptr;
+		unsigned slotIndexTo = 0;
+		for (unsigned j = 0; j < 7; j++)
+		{
+			CGarrisonSlot *slotTry = getSlot(toRow, j);
+			if ( (!targetSlotCreatures[j] || (targetSlotCreatures[j] == slotFrom->creature)) &&
+				 (!slotTo || (targetSlotCreatureCount[j] > targetSlotCreatureCount[slotIndexTo])) )
+			{
+				slotTo = slotTry;
+				slotIndexTo = j;
+			}
+		}
+
+		if (slotTo)
+		{
+			targetSlotCreatures[slotIndexTo] = slotFrom->creature;
+			if (sourceRowCreatureSlots > 1)
+			{
+				targetSlotCreatureCount[slotIndexTo] += slotFrom->myStack->count;
+				LOCPLINT->cb->mergeOrSwapStacks(slotFrom->getObj(), slotTo->getObj(), slotFrom->ID, slotTo->ID);
+				sourceRowCreatureSlots--;
+			}
+			else if (slotFrom->myStack->count > 1)
+			{
+				// Moving the last stack - split it leaving one creature
+				targetSlotCreatureCount[slotIndexTo] += slotFrom->myStack->count - 1;
+				LOCPLINT->cb->splitStack(slotFrom->getObj(), slotTo->getObj(), slotFrom->ID, slotTo->ID, targetSlotCreatureCount[slotIndexTo]);
+			}
+		}
+	}
+}
+
+void CGarrisonInt::swapAll()
+{
+	// All those complications arise from the need to avoid removing last stack from a hero.
+	// Could be much simpler with a dedicated callback (much faster, too).
+	unsigned n1 = 0;
+	unsigned n2 = 0;
+	std::array<bool, 7> swapSlot[2];
+	for (unsigned i = 0; i < 7; i++)
+	{
+		if (getSlot(0, i)->myStack)
+		{
+			n1++;
+			swapSlot[0][i] = true;
+		}
+		else
+			swapSlot[0][i] = false;
+		if (getSlot(1, i)->myStack)
+		{
+			n2++;
+			swapSlot[1][i] = true;
+		}
+		else
+			swapSlot[1][i] = false;
+	}
+
+	unsigned smallerRow = (n1 < n2) ? 0 : 1;
+	unsigned smallerNum = std::min(n1, n2);
+	unsigned biggerNum  = std::max(n1, n2);
+
+	unsigned extraLeft = biggerNum - smallerNum;
+	for (unsigned i = 0; extraLeft && (i < 7); i++)
+		if (!swapSlot[smallerRow][i])
+		{
+			extraLeft--;
+			swapSlot[smallerRow][i] = true;
+		}
+
+	unsigned i1 = 0;
+	unsigned i2 = 0;
+	while ((i1 < 7) && (i2 < 7))
+	{
+		while ((i1 < 7) && !swapSlot[0][i1]) i1++;
+		while ((i2 < 7) && !swapSlot[1][i2]) i2++;
+
+		if ((i1 < 7) && (i2 < 7))
+		{
+			CGarrisonSlot *slot1 = getSlot(0, i1);
+			CGarrisonSlot *slot2 = getSlot(1, i2);
+			LOCPLINT->cb->swapCreatures(slot1->getObj(), slot2->getObj(), slot1->ID, slot2->ID);
+			i1++;
+			i2++;
+		}
+	}
 }
 
 CGarrisonInt::CGarrisonInt(int x, int y, int inx, const Point & garsOffset,

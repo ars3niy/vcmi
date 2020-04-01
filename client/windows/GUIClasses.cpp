@@ -949,9 +949,9 @@ CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2,
 	if (newLayout && (CGI->generaltexth->newCommands.size() >= 5))
 	{
 		auto nothing = [](){};
-		moveAllGarrButtonLeft    = std::make_shared<CButton>(Point(325, 121), "SWCMR.DEF", CButton::tooltip(CGI->generaltexth->newCommands[1]), nothing);
-		echangeGarrButton        = std::make_shared<CButton>(Point(377, 121), "SWXCH.DEF", CButton::tooltip(CGI->generaltexth->newCommands[2]), nothing);
-		moveAllGarrButtonRight   = std::make_shared<CButton>(Point(425, 121), "SWCML.DEF", CButton::tooltip(CGI->generaltexth->newCommands[1]), nothing);
+		moveAllGarrButtonLeft    = std::make_shared<CButton>(Point(325, 121), "SWCMR.DEF", CButton::tooltip(CGI->generaltexth->newCommands[1]), [this](){ garr->moveAllCreatures(0, 1); });
+		exchangeGarrButton       = std::make_shared<CButton>(Point(377, 121), "SWXCH.DEF", CButton::tooltip(CGI->generaltexth->newCommands[2]), [this](){ garr->swapAll(); });
+		moveAllGarrButtonRight   = std::make_shared<CButton>(Point(425, 121), "SWCML.DEF", CButton::tooltip(CGI->generaltexth->newCommands[1]), [this](){ garr->moveAllCreatures(1, 0); });
 		moveArtifactsButtonLeft  = std::make_shared<CButton>(Point(325, 180), "SWAMR.DEF", CButton::tooltip(CGI->generaltexth->newCommands[3]), nothing);
 		echangeArtifactsButton   = std::make_shared<CButton>(Point(377, 180), "SWXCH.DEF", CButton::tooltip(CGI->generaltexth->newCommands[4]), nothing);
 		moveArtifactsButtonRight = std::make_shared<CButton>(Point(425, 180), "SWAML.DEF", CButton::tooltip(CGI->generaltexth->newCommands[3]), nothing);

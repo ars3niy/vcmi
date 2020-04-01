@@ -311,7 +311,7 @@ class CExchangeWindow : public CStatusbarWindow, public CGarrisonHolder, public 
 
 	std::shared_ptr<CGarrisonInt> garr;
 	std::shared_ptr<CButton> moveAllGarrButtonLeft;
-	std::shared_ptr<CButton> echangeGarrButton;
+	std::shared_ptr<CButton> exchangeGarrButton;
 	std::shared_ptr<CButton> moveAllGarrButtonRight;
 	std::shared_ptr<CButton> moveArtifactsButtonLeft;
 	std::shared_ptr<CButton> echangeArtifactsButton;

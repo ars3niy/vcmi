@@ -70,6 +70,7 @@ class CGarrisonInt :public CIntObject
 	std::vector<std::shared_ptr<CGarrisonSlot>> availableSlots;  ///< Slots of upper and lower garrison
 
 	void createSlots();
+	CGarrisonSlot *getSlot(unsigned row, unsigned slotNumber);
 public:
 	int interx;  ///< Space between slots
 	Point garOffset;  ///< Offset between garrisons (not used if only one hero)
@@ -99,6 +100,8 @@ public:
 
 	void splitClick();  ///< handles click on split button
 	void splitStacks(int amountLeft, int amountRight);  ///< TODO: comment me
+	void moveAllCreatures(unsigned fromRow, unsigned toRow);
+	void swapAll();
 
 	/// Constructor
 	/// @param x, y Position
