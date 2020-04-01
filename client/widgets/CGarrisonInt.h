@@ -102,6 +102,7 @@ public:
 	void splitStacks(int amountLeft, int amountRight);  ///< TODO: comment me
 	void moveAllCreatures(unsigned fromRow, unsigned toRow);
 	void swapAll();
+	void transferToOtherRow(unsigned fromRow, unsigned slotNumber);
 
 	/// Constructor
 	/// @param x, y Position

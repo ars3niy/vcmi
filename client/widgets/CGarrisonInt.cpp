@@ -627,6 +627,50 @@ void CGarrisonInt::swapAll()
 	}
 }
 
+void CGarrisonInt::transferToOtherRow(unsigned fromRow, unsigned slotNumber)
+{
+	CGarrisonSlot *slotFrom = availableSlots[fromRow*7 + slotNumber].get();
+	const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
+	CGarrisonSlot::EGarrisonType otherType = (slotFrom->upg == CGarrisonSlot::UP) ? CGarrisonSlot::DOWN : CGarrisonSlot::UP;
+
+	if (slotFrom->myStack)
+	{
+		if (keyboardState[SDL_SCANCODE_LCTRL] && !keyboardState[SDL_SCANCODE_LSHIFT])
+		{
+			// Ctrl+arrow - split off one creature into an empty slot
+			if (!getEmptySlots(otherType).empty())
+			{
+				// splitStacks uses getSelection(), so do this fake selection hack
+				CGarrisonSlot *saveSelection = highlighted;
+				highlighted = slotFrom;
+				slotFrom->splitIntoParts(otherType, 1, 1);
+				highlighted = saveSelection;
+			}
+		}
+		else
+		{
+			CGarrisonSlot *slotTo = nullptr;
+			// Find a compatible slot (empty or with same creature type) with the most creatures,
+			// and move into that slot.
+			for (auto slotTry: availableSlots)
+				if ( (slotTry->upg == otherType) && (!slotTry->myStack || (slotTry->creature == slotFrom->creature)) &&
+				     (!slotTo || (slotTry->myStack && (!slotTo->myStack || (slotTry->myStack->count > slotTo->myStack->count)))) )
+				{
+					slotTo = slotTry.get();
+				}
+
+			if (slotTo)
+			{
+				if (slotFrom->getObj()->stacksCount() > 1)
+					LOCPLINT->cb->mergeOrSwapStacks(slotFrom->getObj(), slotTo->getObj(), slotFrom->ID, slotTo->ID);
+				else
+					LOCPLINT->cb->splitStack(slotFrom->getObj(), slotTo->getObj(), slotFrom->ID, slotTo->ID,
+					                         slotFrom->myStack->count + (slotTo->myStack ? slotTo->myStack->count : 0) - 1);
+			}
+		}
+	}
+}
+
 CGarrisonInt::CGarrisonInt(int x, int y, int inx, const Point & garsOffset,
 		const CArmedInstance * s1, const CArmedInstance * s2,
 		bool _removableUnits, bool smallImgs, bool _twoRows)

@@ -949,6 +949,11 @@ CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2,
 	if (newLayout && (CGI->generaltexth->newCommands.size() >= 5))
 	{
 		auto nothing = [](){};
+		for (unsigned i = 0; i < 7; i++)
+		{
+			transferStackButtons[i]   = std::make_shared<CButton>(Point(66 + 36*i, 156), "HD_MOV1R.DEF", CButton::tooltip(CGI->generaltexth->newCommands[0]), [this, i](){ garr->transferToOtherRow(0, i); });
+			transferStackButtons[7+i] = std::make_shared<CButton>(Point(484 + 36*i, 156), "HD_MOV1L.DEF", CButton::tooltip(CGI->generaltexth->newCommands[0]), [this, i](){ garr->transferToOtherRow(1, i); });
+		}
 		moveAllGarrButtonLeft    = std::make_shared<CButton>(Point(325, 121), "SWCMR.DEF", CButton::tooltip(CGI->generaltexth->newCommands[1]), [this](){ garr->moveAllCreatures(0, 1); });
 		exchangeGarrButton       = std::make_shared<CButton>(Point(377, 121), "SWXCH.DEF", CButton::tooltip(CGI->generaltexth->newCommands[2]), [this](){ garr->swapAll(); });
 		moveAllGarrButtonRight   = std::make_shared<CButton>(Point(425, 121), "SWCML.DEF", CButton::tooltip(CGI->generaltexth->newCommands[1]), [this](){ garr->moveAllCreatures(1, 0); });

@@ -316,6 +316,7 @@ class CExchangeWindow : public CStatusbarWindow, public CGarrisonHolder, public 
 	std::shared_ptr<CButton> moveArtifactsButtonLeft;
 	std::shared_ptr<CButton> echangeArtifactsButton;
 	std::shared_ptr<CButton> moveArtifactsButtonRight;
+	std::array<std::shared_ptr<CButton>, 14> transferStackButtons;
 
 public:
 	std::array<const CGHeroInstance *, 2> heroInst;
