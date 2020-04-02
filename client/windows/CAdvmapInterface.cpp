@@ -1256,14 +1256,7 @@ void CAdvMapInt::keyPressed(const SDL_KeyboardEvent & key)
 			if(!isActive())
 				return;
 			if(h && key.state == SDL_PRESSED)
-			{
-				auto unlockPim = vstd::makeUnlockGuard(*CPlayerInterface::pim);
-				//TODO!!!!!!! possible freeze, when GS mutex is locked and network thread can't apply package
-				//this thread leaves scope and tries to lock pim while holding gs,
-				//network thread tries to lock gs (appluy cl) while holding pim
-				//this thread should first lock pim, however gs locking/unlocking is done inside cb
 				LOCPLINT->cb->moveHero(h,h->pos);
-			}
 		}
 		return;
 	case SDLK_RETURN:
