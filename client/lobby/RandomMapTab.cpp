@@ -27,16 +27,59 @@
 #include "../../lib/CGeneralTextHandler.h"
 #include "../../lib/mapping/CMapInfo.h"
 #include "../../lib/rmg/CMapGenOptions.h"
+#include "../../lib/filesystem/Filesystem.h"
+
+static std::string getDisplayedTemplateName(const std::string &internalName)
+{
+	size_t colon = internalName.find(':');
+	if (colon != std::string::npos)
+	{
+		size_t dot = internalName.rfind('.', colon);
+		size_t prefixStart = (dot != std::string::npos) ? dot+1 : 0;
+		std::string name = internalName.substr(prefixStart, std::min(colon-prefixStart-1, size_t(5)));
+		name += internalName.substr(colon);
+		return name;
+	}
+	else
+		return internalName;
+}
 
 RandomMapTab::RandomMapTab()
 {
 	recActions = 0;
 	mapGenOptions = std::make_shared<CMapGenOptions>();
 	OBJ_CONSTRUCTION;
-	background = std::make_shared<CPicture>("RANMAPBK", 0, 6);
 
-	labelHeadlineBig = std::make_shared<CLabel>(222, 36, FONT_BIG, EAlignment::CENTER, Colors::YELLOW, CGI->generaltexth->allTexts[738]);
-	labelHeadlineSmall = std::make_shared<CLabel>(222, 56, FONT_SMALL, EAlignment::CENTER, Colors::WHITE, CGI->generaltexth->allTexts[739]);
+	bool newLayout = (CGI->generaltexth->newCommands.size() >= 6);
+	if (newLayout)
+	{
+		background = std::make_shared<CPicture>("RMGBGEX", 0, 6);
+		if (background->pos.w == 0)
+			newLayout = false;
+	}
+	if (!newLayout)
+		background = std::make_shared<CPicture>("RANMAPBK", 0, 6);
+
+	if (newLayout)
+	{
+		labelHeadlineBig = std::make_shared<CLabel>(222, 34, FONT_SMALL, EAlignment::CENTER, Colors::YELLOW, CGI->generaltexth->allTexts[738]);
+		labelTemplateBg = std::unique_ptr<CPicture>(new CPicture("RMGTTBK", 54, 54));
+		labelTemplate = std::unique_ptr<CLabel>(new CLabel(104, 64, FONT_SMALL, EAlignment::CENTER, Colors::WHITE, CGI->generaltexth->newCommands[5]));
+
+		std::vector<std::string> templateNames;
+		for (const auto &mapItem: mapGenOptions->getAvailableTemplates())
+		{
+			templateNames.push_back(getDisplayedTemplateName(mapItem.first));
+			templates.push_back(mapItem.second);
+		}
+		chosenTemplate = std::unique_ptr<CDropBox>(new CDropBox(Point(158, 55), "DRDOCOBK", "LIST10BK", 10, FONT_SMALL, templateNames, 0));
+		chosenTemplate->setSelectionCallback([this](unsigned index) { mapGenOptions->setMapTemplate(templates[index]); });
+	}
+	else
+	{
+		labelHeadlineBig = std::make_shared<CLabel>(222, 36, FONT_BIG, EAlignment::CENTER, Colors::YELLOW, CGI->generaltexth->allTexts[738]);
+		labelHeadlineSmall = std::make_shared<CLabel>(222, 56, FONT_SMALL, EAlignment::CENTER, Colors::WHITE, CGI->generaltexth->allTexts[739]);
+	}
 
 	labelMapSize = std::make_shared<CLabel>(104, 97, FONT_SMALL, EAlignment::CENTER, Colors::WHITE, CGI->generaltexth->allTexts[752]);
 	groupMapSize = std::make_shared<CToggleGroup>(0);
@@ -152,6 +195,10 @@ RandomMapTab::RandomMapTab()
 	buttonShowRandomMaps = std::make_shared<CButton>(Point(54, 535), "RANSHOW", CGI->generaltexth->zelp[252]);
 
 	updateMapInfoByHost();
+}
+
+RandomMapTab::~RandomMapTab()
+{
 }
 
 void RandomMapTab::updateMapInfoByHost()

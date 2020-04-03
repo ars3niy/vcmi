@@ -171,6 +171,7 @@ private:
 	EMonsterStrength::EMonsterStrength monsterStrength;
 	std::map<PlayerColor, CPlayerSettings> players;
 	const CRmgTemplate * mapTemplate;
+	std::string mapTemplateKey;
 
 public:
 	template <typename Handler>
@@ -187,6 +188,6 @@ public:
 		h & monsterStrength;
 		h & players;
 		h & humanPlayersCount;
-		//TODO add name of template to class, enables selection of a template by a user
+		h & mapTemplateKey;
 	}
 };

@@ -32,24 +32,50 @@ void CLabel::showAll(SDL_Surface * to)
 	CIntObject::showAll(to);
 
 	if(!visibleText().empty())
-		blitLine(to, pos, visibleText());
-
+	{
+		if (limitedSize)
+		{
+			CSDL_Ext::CClipRectGuard guard(to, pos);
+			blitLine(to, pos, visibleText());
+		}
+		else
+			blitLine(to, pos, visibleText());
+	}
 }
 
 CLabel::CLabel(int x, int y, EFonts Font, EAlignment Align, const SDL_Color & Color, const std::string & Text)
+	: CLabel(Rect(x, y, 0, 0), Font, Align, Color, Text)
+{
+}
+
+CLabel::CLabel(Rect position, EFonts Font, EAlignment Align, const SDL_Color & Color, const std::string & Text)
 	: CTextContainer(Align, Font, Color), text(Text)
 {
 	type |= REDRAW_PARENT;
 	autoRedraw = true;
-	pos.x += x;
-	pos.y += y;
-	pos.w = pos.h = 0;
+	pos.x += position.x;
+	pos.y += position.y;
+	limitedSize = false;
 
-	if(alignment == TOPLEFT) // causes issues for MIDDLE
+	if (position.w > 0)
 	{
-		pos.w = graphics->fonts[font]->getStringWidth(visibleText().c_str());
-		pos.h = graphics->fonts[font]->getLineHeight();
+		limitedSize = true;
+		pos.w = position.w;
 	}
+	else if (alignment == TOPLEFT) // causes issues for MIDDLE
+		pos.w = graphics->fonts[font]->getStringWidth(visibleText().c_str());
+	else
+		pos.w = 0;
+
+	if (position.h > 0)
+	{
+		limitedSize = true;
+		pos.h = position.h;
+	}
+	else if (alignment == TOPLEFT)
+		pos.h = graphics->fonts[font]->getLineHeight();
+	else
+		pos.h = 0;
 }
 
 Point CLabel::getBorderSize()

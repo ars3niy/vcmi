@@ -17,11 +17,14 @@ class CMapGenOptions;
 class CToggleButton;
 class CLabel;
 class CLabelGroup;
+class CDropBox;
+class CRmgTemplate;
 
 class RandomMapTab : public CIntObject
 {
 public:
 	RandomMapTab();
+	virtual ~RandomMapTab();
 
 	void updateMapInfoByHost();
 	void setMapGenOptions(std::shared_ptr<CMapGenOptions> opts);
@@ -41,6 +44,10 @@ private:
 	std::shared_ptr<CLabel> labelHeadlineBig;
 	std::shared_ptr<CLabel> labelHeadlineSmall;
 
+	std::unique_ptr<CPicture> labelTemplateBg;
+	std::unique_ptr<CLabel> labelTemplate;
+	std::unique_ptr<CDropBox> chosenTemplate;
+
 	std::shared_ptr<CLabel> labelMapSize;
 	std::shared_ptr<CToggleGroup> groupMapSize;
 	std::shared_ptr<CToggleButton> buttonTwoLevels;
@@ -55,4 +62,6 @@ private:
 	std::shared_ptr<CButton> buttonShowRandomMaps;
 	std::shared_ptr<CMapGenOptions> mapGenOptions;
 	std::shared_ptr<CMapInfo> mapInfo;
+
+	std::vector<CRmgTemplate *> templates;
 };

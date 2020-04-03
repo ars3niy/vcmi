@@ -12,6 +12,10 @@
 
 #include "../gui/CGuiHandler.h"
 #include "Buttons.h"
+#include "Images.h"
+#include "TextControls.h"
+#include "MiscWidgets.h"
+#include "../windows/CWindowObject.h"
 
 CObjectList::CObjectList(CreateFunc create)
 	: createObject(create)
@@ -225,4 +229,129 @@ size_t CListBox::getPos()
 const std::list<std::shared_ptr<CIntObject>> & CListBox::getItems()
 {
 	return items;
+}
+
+enum {DropBoxLabelOffset = 3};
+
+class DropBoxList: public CWindowObject
+{
+	CDropBox *owner;
+	std::vector<std::string> itemNames;
+	std::vector<std::unique_ptr<CLabel>> labels;
+	std::unique_ptr<CSlider> slider;
+	int mouseX, mouseY;
+	unsigned visibleItems;
+	unsigned sliderPosition;
+
+	void setPosition(unsigned value);
+public:
+	DropBoxList(CDropBox *owner, const std::string &backgroundImage, int x, int y,
+	            const std::vector<std::string> items, unsigned selectedIndex,
+	            unsigned visibleItems);
+	void clickLeft(tribool down, bool previousState) override;
+	void mouseMoved (const SDL_MouseMotionEvent & sEvent) override;
+};
+
+DropBoxList::DropBoxList(CDropBox *owner, const std::string &backgroundImage, int x, int y,
+                         const std::vector<std::string> items, unsigned selectedIndex,
+                         unsigned visibleItems)
+: CWindowObject(CWindowObject::EOptions::SHADOW_DISABLED, backgroundImage),
+  owner(owner),
+  itemNames(items),
+  visibleItems(visibleItems)
+{
+	OBJ_CONSTRUCTION_CAPTURING_ALL_NO_DISPOSE;
+	moveBy(Point(x-pos.x, y-pos.y), true);
+
+	unsigned startingPosition;
+	if ((selectedIndex < visibleItems/2) || (visibleItems >= items.size()))
+		startingPosition = 0;
+	else
+	{
+		startingPosition = selectedIndex - visibleItems/2;
+		if (startingPosition + visibleItems > items.size())
+			startingPosition = items.size() - visibleItems;
+	}
+
+	slider = std::unique_ptr<CSlider>(new CSlider(Point(0, 0), pos.h, [this](int pos) { setPosition(pos); redraw(); },
+	                                              visibleItems, items.size(), startingPosition, false, CSlider::BLUE));
+	static_cast<CIntObject *>(slider.get())->moveBy(Point(pos.w - slider->pos.w, 0));
+
+	labels.resize(std::min((unsigned)items.size(), visibleItems));
+	setPosition(startingPosition);
+	addUsedEvents(LCLICK | MOVE);
+}
+
+void DropBoxList::mouseMoved (const SDL_MouseMotionEvent & sEvent)
+{
+	mouseX = sEvent.x - pos.x;
+	mouseY = sEvent.y - pos.y;
+}
+
+void DropBoxList::clickLeft(tribool down, bool previousState)
+{
+	if (down && (mouseX < pos.w - slider->pos.w))
+	{
+		int y = std::max(mouseY, 0);
+		unsigned index = sliderPosition + (y * visibleItems) / pos.h;
+		if (index < itemNames.size())
+		{
+			owner->selectedIndex = index;
+			owner->selection->setText(itemNames[index]);
+			if (owner->selectionCallback)
+				owner->selectionCallback(index);
+		}
+		close();
+	}
+}
+
+void DropBoxList::setPosition(unsigned position)
+{
+	OBJ_CONSTRUCTION_CAPTURING_ALL_NO_DISPOSE;
+
+	sliderPosition = position;
+	for (unsigned i = 0; i < visibleItems; i++)
+	{
+		unsigned labelIndex = position+i;
+		if (labelIndex >= itemNames.size())
+			break;
+
+		labels[i] = std::unique_ptr<CLabel>(new CLabel(Rect(DropBoxLabelOffset, 0, pos.w - DropBoxLabelOffset - slider->pos.w, 0),
+		                                               FONT_SMALL, TOPLEFT, Colors::WHITE, itemNames[labelIndex]));
+		labels[i]->moveBy(Point(0, (pos.h * i)/visibleItems + (pos.h/visibleItems - labels[i]->pos.h)/2));
+	}
+}
+
+CDropBox::CDropBox(Point topLeft, const std::string &selectionBgImage,
+                   const std::string &listBgImage, unsigned listVisibleSize,
+                   EFonts listFont, const std::vector<std::string> &items,
+                   unsigned selectedIndex)
+: selectionCallback(nullptr)
+{
+	selectionBg = std::unique_ptr<CPicture>(new CPicture(selectionBgImage, topLeft.x, topLeft.y));
+	pos = selectionBg->pos;
+
+	selection = std::unique_ptr<CLabel>(new CLabel(Rect(topLeft.x + DropBoxLabelOffset, topLeft.y, pos.w - DropBoxLabelOffset - 20, 0),
+	                                               listFont, TOPLEFT, Colors::WHITE,
+	                                               (selectedIndex < items.size()) ? items[selectedIndex] : ""));
+	itemNames = items;
+	this->listVisibleSize = listVisibleSize;
+	this->selectedIndex = selectedIndex;
+	this->listBackgroundName = listBgImage;
+	addUsedEvents(LCLICK);
+}
+
+CDropBox::~CDropBox()
+{
+}
+
+void CDropBox::clickLeft(tribool down, bool previousState)
+{
+	if (down)
+		GH.pushIntT<DropBoxList>(this, listBackgroundName, pos.x, pos.y, itemNames, selectedIndex, listVisibleSize);
+}
+
+void CDropBox::setSelectionCallback(const std::function<void(unsigned)> &callback)
+{
+	selectionCallback = callback;
 }

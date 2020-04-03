@@ -217,8 +217,12 @@ const CRmgTemplate * CMapGenOptions::getMapTemplate() const
 void CMapGenOptions::setMapTemplate(const CRmgTemplate * value)
 {
 	mapTemplate = value;
-	//TODO validate & adapt options according to template
-	assert(0);
+	for (const auto &entry: getAvailableTemplates())
+		if (entry.second == value)
+		{
+			mapTemplateKey = entry.first;
+			break;
+		}
 }
 
 const std::map<std::string, CRmgTemplate *> & CMapGenOptions::getAvailableTemplates() const
@@ -231,6 +235,13 @@ void CMapGenOptions::finalize(CRandomGenerator & rand)
 	logGlobal->info("RMG settings: players %d, teams %d, computer players %d, computer teams %d, water %d, monsters %d",
 		static_cast<int>(getPlayerCount()), static_cast<int>(getTeamCount()), static_cast<int>(getCompOnlyPlayerCount()),
 		static_cast<int>(getCompOnlyTeamCount()), static_cast<int>(getWaterContent()), static_cast<int>(getMonsterStrength()));
+
+	if (!mapTemplate && !mapTemplateKey.empty())
+	{
+		auto pEntry = getAvailableTemplates().find(mapTemplateKey);
+		if (pEntry != getAvailableTemplates().end())
+			mapTemplate = pEntry->second;
+	}
 
 	if(!mapTemplate)
 	{

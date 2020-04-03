@@ -105,3 +105,28 @@ public:
 
 	size_t getPos();
 };
+
+class DropBoxList;
+
+class CDropBox: public CIntObject
+{
+private:
+	unsigned listVisibleSize;
+	std::string listBackgroundName;
+	unsigned selectedIndex;
+	std::vector<std::string> itemNames;
+	std::unique_ptr<CPicture> selectionBg;
+	std::unique_ptr<CLabel> selection;
+	std::function<void(unsigned)> selectionCallback;
+
+	void showList();
+	friend class DropBoxList;
+public:
+	CDropBox(Point topLeft, const std::string &selectionBgImage,
+	         const std::string &listBgImage, unsigned listVisibleSize,
+	         EFonts listFont, const std::vector<std::string> &items,
+	         unsigned selectedIndex);
+	virtual ~CDropBox();
+	void clickLeft(tribool down, bool previousState) override;
+	void setSelectionCallback(const std::function<void(unsigned)> &callback);
+};

@@ -41,6 +41,7 @@ protected:
 	virtual std::string visibleText();
 
 	std::shared_ptr<CPicture> background;
+	bool limitedSize;
 public:
 
 	std::string text;
@@ -54,6 +55,10 @@ public:
 
 	CLabel(int x=0, int y=0, EFonts Font = FONT_SMALL, EAlignment Align = TOPLEFT,
 	       const SDL_Color &Color = Colors::WHITE, const std::string &Text =  "");
+
+	// If width and/or height are zero, they are set to text width
+	CLabel(Rect position, EFonts Font = FONT_SMALL, EAlignment Align = TOPLEFT,
+	                const SDL_Color &Color = Colors::WHITE, const std::string &Text =  "");
 	void showAll(SDL_Surface * to) override; //shows statusbar (with current text)
 };
 

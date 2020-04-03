@@ -30,6 +30,7 @@ struct InfoAboutTown;
 class CHeroTooltip;
 class CTownTooltip;
 class CTextBox;
+class CLabel;
 
 /// Base UI Element for hero\town lists
 class CList : public CIntObject
