@@ -849,11 +849,15 @@ void CMapHandler::CMapBlitter::drawFow(SDL_Surface * targetSurf) const
 
 void CMapHandler::CMapBlitter::blit(SDL_Surface * targetSurf, const MapDrawingInfo * info)
 {
+	struct timeval tv0;
+	gettimeofday(&tv0, NULL);
 	init(info);
 	auto prevClip = clip(targetSurf);
 
 	pos = int3(0, 0, topTile.z);
 
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
 	for (realPos.x = initPos.x, pos.x = topTile.x; pos.x < topTile.x + tileCount.x; pos.x++, realPos.x += tileSize)
 	{
 		if (pos.x < 0 || pos.x >= parent->sizes.x)
@@ -885,6 +889,9 @@ void CMapHandler::CMapBlitter::blit(SDL_Surface * targetSurf, const MapDrawingIn
 				drawObjects(targetSurf, tile);
 		}
 	}
+
+	struct timeval tv2;
+	gettimeofday(&tv2, NULL);
 
 	for (realPos.x = initPos.x, pos.x = topTile.x; pos.x < topTile.x + tileCount.x; pos.x++, realPos.x += tileSize)
 	{
@@ -935,8 +942,12 @@ void CMapHandler::CMapBlitter::blit(SDL_Surface * targetSurf, const MapDrawingIn
 		}
 	}
 
+	struct timeval tv3;
+	gettimeofday(&tv3, NULL);
 	drawOverlayEx(targetSurf);
 
+	struct timeval tv4;
+	gettimeofday(&tv4, NULL);
 	// drawDebugGrid()
 	if (settings["session"]["showGrid"].Bool())
 	{
@@ -963,9 +974,20 @@ void CMapHandler::CMapBlitter::blit(SDL_Surface * targetSurf, const MapDrawingIn
 		}
 	}
 
+	struct timeval tv5;
+	gettimeofday(&tv5, NULL);
 	postProcessing(targetSurf);
 
 	SDL_SetClipRect(targetSurf, &prevClip);
+	struct timeval tv6;
+	gettimeofday(&tv6, NULL);
+	fprintf(stderr, "CMapBlitter::blit header=%.3f loop1=%.3f loop2=%.3f inter2=%.3f loop3=%.3f tail=%.3f\n",
+			1e3*(tv.tv_sec-tv0.tv_sec) + 1e-3*(tv.tv_usec-tv0.tv_usec),
+			1e3*(tv2.tv_sec-tv.tv_sec) + 1e-3*(tv2.tv_usec-tv.tv_usec),
+			1e3*(tv3.tv_sec-tv2.tv_sec) + 1e-3*(tv3.tv_usec-tv2.tv_usec),
+			1e3*(tv4.tv_sec-tv3.tv_sec) + 1e-3*(tv4.tv_usec-tv3.tv_usec),
+			1e3*(tv5.tv_sec-tv4.tv_sec) + 1e-3*(tv5.tv_usec-tv4.tv_usec),
+			1e3*(tv6.tv_sec-tv5.tv_sec) + 1e-3*(tv6.tv_usec-tv5.tv_usec));
 }
 
 CMapHandler::AnimBitmapHolder CMapHandler::CMapBlitter::findHeroBitmap(const CGHeroInstance * hero, int anim) const
